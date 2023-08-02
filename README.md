@@ -74,3 +74,18 @@ The rental object JSON in the response should have the following structure:
 When complete, please push your code to Github to your own account and send the link to the project or zip the project (including the `.git` directory) and send it back.
 
 Thank you and please ask if you have any questions!
+
+# Development
+
+## Requirements
+
+- Golang 1.20
+
+## Running the application
+
+To run the application locally:
+
+```sh
+go mod download
+go run .
+```
