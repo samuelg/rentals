@@ -6,15 +6,16 @@ import (
 )
 
 type Config struct {
-	AppVersion string `mapstructure:"app_version"`
-	Host       string `mapstructure:"host"`
-	Port       uint16 `mapstructure:"port"`
-	LogLevel   string `mapstructure:"log_level"`
-	DbHost     string `mapstructure:"db_host"`
-	DbPort     uint16 `mapstructure:"db_port"`
-	DbUser     string `mapstructure:"db_user"`
-	DbPassword string `mapstructure:"db_password"`
-	DbName     string `mapstructure:"db_name"`
+	AppVersion      string `mapstructure:"app_version"`
+	Host            string `mapstructure:"host"`
+	Port            uint16 `mapstructure:"port"`
+	LogLevel        string `mapstructure:"log_level"`
+	DbHost          string `mapstructure:"db_host"`
+	DbPort          uint16 `mapstructure:"db_port"`
+	DbUser          string `mapstructure:"db_user"`
+	DbPassword      string `mapstructure:"db_password"`
+	DbName          string `mapstructure:"db_name"`
+	DefaultApiLimit uint8  `mapstructure:"default_api_limit"`
 }
 
 var parsedConfig Config

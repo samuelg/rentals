@@ -67,6 +67,107 @@ func (suite *RentalControllerTestSuite) TestListRentalsSuccess() {
 	}
 }
 
+func (suite *RentalControllerTestSuite) TestListRentalsSuccessAllFilters() {
+	req, _ := http.NewRequest("GET", "/rentals/?price_min=100&price_max=200000&limit=10&offset=0&sort=price&ids=1,2&near=61.0,-149.0", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	if suite.Equal(http.StatusOK, w.Code) {
+		var response listResponse
+		if suite.Nil(json.Unmarshal(w.Body.Bytes(), &response), "Should be able to unmarshal response") {
+			suite.Equal(0, len(response.Data), "Should return an empty array")
+		}
+	}
+}
+
+func (suite *RentalControllerTestSuite) TestListRentalsInvalidPriceMin() {
+	req, _ := http.NewRequest("GET", "/rentals/?price_min=a", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusBadRequest, w.Code)
+}
+
+func (suite *RentalControllerTestSuite) TestListRentalsInvalidPriceMax() {
+	req, _ := http.NewRequest("GET", "/rentals/?price_max=a", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusBadRequest, w.Code)
+}
+
+func (suite *RentalControllerTestSuite) TestListRentalsInvalidLimit() {
+	req, _ := http.NewRequest("GET", "/rentals/?limit=50.5", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusBadRequest, w.Code)
+}
+
+func (suite *RentalControllerTestSuite) TestListRentalsLimitTooLarge() {
+	req, _ := http.NewRequest("GET", "/rentals/?limit=1000", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusBadRequest, w.Code)
+}
+
+func (suite *RentalControllerTestSuite) TestListRentalsInvalidOffset() {
+	req, _ := http.NewRequest("GET", "/rentals/?offset=50.5", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusBadRequest, w.Code)
+}
+
+func (suite *RentalControllerTestSuite) TestListRentalsInvalidSort() {
+	req, _ := http.NewRequest("GET", "/rentals/?sort=notafield", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusBadRequest, w.Code)
+}
+
+func (suite *RentalControllerTestSuite) TestListRentalsInvalidIds() {
+	req, _ := http.NewRequest("GET", "/rentals/?ids=1,a", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusBadRequest, w.Code)
+}
+
+func (suite *RentalControllerTestSuite) TestListRentalsInvalidNear() {
+	req, _ := http.NewRequest("GET", "/rentals/?near=1,a", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusBadRequest, w.Code)
+}
+
+func (suite *RentalControllerTestSuite) TestListRentalsNearTooFewValues() {
+	req, _ := http.NewRequest("GET", "/rentals/?near=1", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusBadRequest, w.Code)
+}
+
+func (suite *RentalControllerTestSuite) TestListRentalsNearTooManyValues() {
+	req, _ := http.NewRequest("GET", "/rentals/?near=1,2,3", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusBadRequest, w.Code)
+}
+
+func (suite *RentalControllerTestSuite) TestListRentalsNearInvalidLatLong() {
+	req, _ := http.NewRequest("GET", "/rentals/?near=100,200", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusBadRequest, w.Code)
+}
+
 // GET /rentals/:rental_id tests
 
 func (suite *RentalControllerTestSuite) TestGetRentalSuccess() {

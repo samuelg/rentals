@@ -7,3 +7,4 @@ db_port: 5434
 db_user: root
 db_password: root
 db_name: testingwithrentals
+default_api_limit: 10

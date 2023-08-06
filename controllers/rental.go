@@ -7,12 +7,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 	log "github.com/samuelg/rentals/logging"
+	"github.com/samuelg/rentals/models"
 )
 
 type RentalController struct{}
 
 // GET /rentals
 func (u RentalController) List(c *gin.Context) {
+	_, err := models.ParseQuery(c)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid filter", "error": err.Error()})
+		c.Abort()
+		return
+	}
+
 	// TODO: replace placeholder
 	c.JSON(http.StatusOK, gin.H{"data": []string{}})
 }

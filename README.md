@@ -87,5 +87,15 @@ To run the application locally:
 
 ```sh
 go mod download
+docker-compose up
 go run .
+```
+
+## Running tests
+
+To run tests:
+
+```sh
+docker-compose up
+go test -v ./...
 ```
