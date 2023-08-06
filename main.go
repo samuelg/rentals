@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/samuelg/rentals/config"
 	log "github.com/samuelg/rentals/logging"
+	"github.com/samuelg/rentals/server"
 	"os"
 )
 
@@ -22,5 +23,5 @@ func main() {
 
 	log.Log.Info(fmt.Sprintf("Loaded config for %s environment", env))
 
-	log.Log.Info("Rental API service")
+	server.Init()
 }
