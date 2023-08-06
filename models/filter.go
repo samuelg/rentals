@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/samuelg/rentals/config"
+	"github.com/samuelg/rentals/db"
 	log "github.com/samuelg/rentals/logging"
 )
 
@@ -151,4 +152,85 @@ func ParseQuery(c *gin.Context) (*Filter, error) {
 	}
 
 	return filter, nil
+}
+
+// Find rentals using the provided filter
+// TODO: return count as well within transaction
+func (filter *Filter) Find() ([]Rental, error) {
+	var rentals []Rental
+	// Default query
+	query := db.DB.Joins("User")
+
+	// Minimum price
+	if filter.PriceMin != nil {
+		query = query.Where("price_per_day >= ?", *filter.PriceMin)
+	}
+
+	// Maximum price
+	if filter.PriceMax != nil {
+		query = query.Where("price_per_day <= ?", *filter.PriceMax)
+	}
+
+	// IDs
+	if len(filter.Ids) != 0 {
+		// IN clause
+		query = query.Where(filter.Ids)
+	}
+
+	// Near
+	if len(filter.Near) == 2 {
+		lat := filter.Near[0]
+		lng := filter.Near[1]
+		// Use geography to calculate in meters, then convert from miles
+		query = query.Where(
+			"ST_DWITHIN(ST_SETSRID(st_makepoint(lng, lat), 4326)::geography, st_setsrid(st_makepoint(?, ?), 4326)::geography, 100 * 1609.34)",
+			lng,
+			lat,
+		)
+	}
+
+	// Limit sort to known values
+	var sort string
+	switch filter.Sort {
+	case "name":
+		sort = "name"
+	case "type":
+		sort = "type"
+	case "sleeps":
+		sort = "sleeps"
+	case "price":
+		sort = "price_per_day"
+	case "city":
+		sort = "home_city"
+	case "state":
+		sort = "home_state"
+	case "country":
+		sort = "home_country"
+	case "make":
+		sort = "vehicle_make"
+	case "model":
+		sort = "vehicle_model"
+	case "year":
+		sort = "vehicle_year"
+	case "length":
+		sort = "vehicle_length"
+	case "created":
+		sort = "created"
+	case "updated":
+		sort = "updated"
+	default:
+		// Default sort
+		sort = "id"
+	}
+
+	// Apply limit and offset
+	query = query.Limit(int(filter.Limit)).Offset(int(filter.Offset))
+	// Apply sort
+	query = query.Order(sort)
+
+	if result := query.Find(&rentals); result.Error != nil {
+		return nil, result.Error
+	}
+
+	return rentals, nil
 }

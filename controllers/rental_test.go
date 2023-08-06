@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/samuelg/rentals/config"
+	"github.com/samuelg/rentals/db"
 	log "github.com/samuelg/rentals/logging"
 	"github.com/stretchr/testify/suite"
 )
@@ -38,6 +39,7 @@ func setupRouter() *gin.Engine {
 func (suite *RentalControllerTestSuite) SetupSuite() {
 	config.Init("test")
 	log.Init("FATAL", config.GetConfig().AppVersion)
+	db.Init()
 	suite.config = config.GetConfig()
 	suite.router = setupRouter()
 }
@@ -49,13 +51,23 @@ type listResponse struct {
 
 // used to unmarshal json responses
 type getResponse struct {
-	Id int32 `json:"id"`
+	Id       int32    `json:"id"`
+	Price    Price    `json:"price"`
+	Location Location `json:"location"`
+}
+
+type Price struct {
+	Day int64 `json:"day"`
+}
+
+type Location struct {
+	City string `json:"city"`
 }
 
 // GET /rentals tests
 
 func (suite *RentalControllerTestSuite) TestListRentalsSuccess() {
-	req, _ := http.NewRequest("GET", "/rentals/", nil)
+	req, _ := http.NewRequest("GET", "/rentals/?limit=1", nil)
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 
@@ -179,8 +191,18 @@ func (suite *RentalControllerTestSuite) TestGetRentalSuccess() {
 		var response getResponse
 		if suite.Nil(json.Unmarshal(w.Body.Bytes(), &response), "Should be able to unmarshal response") {
 			suite.Equal(int32(1), response.Id)
+			suite.Equal(int64(16900), response.Price.Day)
+			suite.Equal("Costa Mesa", response.Location.City)
 		}
 	}
+}
+
+func (suite *RentalControllerTestSuite) TestGetRentalIdNotFound() {
+	req, _ := http.NewRequest("GET", "/rentals/100", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusNotFound, w.Code)
 }
 
 func (suite *RentalControllerTestSuite) TestGetRentalInvalidId() {
