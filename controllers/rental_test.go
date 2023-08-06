@@ -8,7 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/samuelg/rentals/config"
+	"github.com/samuelg/rentals/db"
 	log "github.com/samuelg/rentals/logging"
+	"github.com/samuelg/rentals/models"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -38,44 +40,68 @@ func setupRouter() *gin.Engine {
 func (suite *RentalControllerTestSuite) SetupSuite() {
 	config.Init("test")
 	log.Init("FATAL", config.GetConfig().AppVersion)
+	db.Init()
 	suite.config = config.GetConfig()
 	suite.router = setupRouter()
 }
 
-// used to unmarshal json responses
-type listResponse struct {
-	Data []string `json:"data"`
-}
-
-// used to unmarshal json responses
-type getResponse struct {
-	Id int32 `json:"id"`
-}
-
 // GET /rentals tests
+type testListResponse struct {
+	Pagigation *PaginationResponse `json:"pagination"`
+	// after a Rental model is marshaled
+	Data []models.RentalResponse `json:"data"`
+}
 
 func (suite *RentalControllerTestSuite) TestListRentalsSuccess() {
-	req, _ := http.NewRequest("GET", "/rentals/", nil)
+	req, _ := http.NewRequest("GET", "/rentals/?limit=1", nil)
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 
 	if suite.Equal(http.StatusOK, w.Code) {
-		var response listResponse
+		var response testListResponse
 		if suite.Nil(json.Unmarshal(w.Body.Bytes(), &response), "Should be able to unmarshal response") {
-			suite.Equal(0, len(response.Data), "Should return an empty array")
+			suite.Equal(1, len(response.Data), "Should return a single result")
+			suite.Equal(uint32(30), response.Pagigation.Count)
+			suite.Equal(uint8(1), response.Pagigation.Limit)
+			suite.Equal(uint32(0), response.Pagigation.Offset)
+			suite.Equal(uint32(1), response.Data[0].ID)
+			suite.Equal("'Abaco' VW Bay Window: Westfalia Pop-top", response.Data[0].Name)
+		}
+	}
+}
+
+func (suite *RentalControllerTestSuite) TestListRentalsSuccessWithOffset() {
+	req, _ := http.NewRequest("GET", "/rentals/?limit=1&offset=1", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	if suite.Equal(http.StatusOK, w.Code) {
+		var response testListResponse
+		if suite.Nil(json.Unmarshal(w.Body.Bytes(), &response), "Should be able to unmarshal response") {
+			suite.Equal(1, len(response.Data), "Should return a single result")
+			suite.Equal(uint32(30), response.Pagigation.Count)
+			suite.Equal(uint8(1), response.Pagigation.Limit)
+			suite.Equal(uint32(1), response.Pagigation.Offset)
+			suite.Equal(uint32(2), response.Data[0].ID)
+			suite.Equal("Maupin: Vanagon Camper", response.Data[0].Name)
 		}
 	}
 }
 
 func (suite *RentalControllerTestSuite) TestListRentalsSuccessAllFilters() {
-	req, _ := http.NewRequest("GET", "/rentals/?price_min=100&price_max=200000&limit=10&offset=0&sort=price&ids=1,2&near=61.0,-149.0", nil)
+	req, _ := http.NewRequest("GET", "/rentals/?near=33.68,-117.82&price_min=9000&price_max=16000&ids=7,15&sort=price&limit=1&offset=0", nil)
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 
 	if suite.Equal(http.StatusOK, w.Code) {
-		var response listResponse
+		var response testListResponse
 		if suite.Nil(json.Unmarshal(w.Body.Bytes(), &response), "Should be able to unmarshal response") {
-			suite.Equal(0, len(response.Data), "Should return an empty array")
+			suite.Equal(1, len(response.Data), "Should return a single result")
+			suite.Equal(uint32(2), response.Pagigation.Count)
+			suite.Equal(uint8(1), response.Pagigation.Limit)
+			suite.Equal(uint32(0), response.Pagigation.Offset)
+			suite.Equal(uint32(15), response.Data[0].ID)
+			suite.Equal("AWESOME 1977 Volkswagen Westfalia camper", response.Data[0].Name)
 		}
 	}
 }
@@ -169,18 +195,27 @@ func (suite *RentalControllerTestSuite) TestListRentalsNearInvalidLatLong() {
 }
 
 // GET /rentals/:rental_id tests
-
 func (suite *RentalControllerTestSuite) TestGetRentalSuccess() {
 	req, _ := http.NewRequest("GET", "/rentals/1", nil)
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 
 	if suite.Equal(http.StatusOK, w.Code) {
-		var response getResponse
+		var response models.RentalResponse
 		if suite.Nil(json.Unmarshal(w.Body.Bytes(), &response), "Should be able to unmarshal response") {
-			suite.Equal(int32(1), response.Id)
+			suite.Equal(uint32(1), response.ID)
+			suite.Equal(int64(16900), response.Price.Day)
+			suite.Equal("Costa Mesa", response.Location.City)
 		}
 	}
+}
+
+func (suite *RentalControllerTestSuite) TestGetRentalIdNotFound() {
+	req, _ := http.NewRequest("GET", "/rentals/100", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	suite.Equal(http.StatusNotFound, w.Code)
 }
 
 func (suite *RentalControllerTestSuite) TestGetRentalInvalidId() {
@@ -192,7 +227,6 @@ func (suite *RentalControllerTestSuite) TestGetRentalInvalidId() {
 }
 
 // test for invalid route handling
-
 func (suite *RentalControllerTestSuite) TestRouteNotFound() {
 	req, _ := http.NewRequest("GET", "/invalid/route", nil)
 	w := httptest.NewRecorder()
