@@ -1,0 +1,9 @@
+---
+host: localhost
+port: 8080
+log_level: DEBUG
+db_host: 127.0.0.1
+db_port: 5434
+db_user: root
+db_password: root
+db_name: testingwithrentals
