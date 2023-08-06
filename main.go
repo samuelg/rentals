@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/samuelg/rentals/config"
+	log "github.com/samuelg/rentals/logging"
 	"os"
 )
 
@@ -16,8 +17,10 @@ func getEnv() string {
 
 func main() {
 	env := getEnv()
-	fmt.Printf("Loanding config for %s environment\n", env)
 	config.Init(env)
+	log.Init(config.GetConfig().LogLevel, config.GetConfig().AppVersion)
 
-	fmt.Println("Rental API service")
+	log.Log.Info(fmt.Sprintf("Loaded config for %s environment", env))
+
+	log.Log.Info("Rental API service")
 }

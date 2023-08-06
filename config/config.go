@@ -6,6 +6,7 @@ import (
 )
 
 type Config struct {
+	AppVersion string `mapstructure:"app_version"`
 	Host       string `mapstructure:"host"`
 	Port       uint16 `mapstructure:"port"`
 	LogLevel   string `mapstructure:"log_level"`
@@ -26,6 +27,7 @@ func Init(env string) {
 	v.AddConfigPath("config/")
 	v.AutomaticEnv()
 
+	v.SetDefault("app_version", "1.0.0")
 	v.SetDefault("host", "0.0.0.0")
 	v.SetDefault("port", 8080)
 
