@@ -106,15 +106,24 @@ When listing rentals the response has the following structure:
 ### Requirements
 
 - Golang 1.20
+- Docker (to run application inside Docker container)
+- Docker compose (to initialize and run the POSTGIS database)
 
 ### Running the application
 
-To run the application locally:
+To run the application locally outside of a container:
 
 ```sh
 go mod download
 docker-compose up
 go run .
+```
+
+To run the application locally inside of a docker container:
+
+```sh
+docker-compose -f docker-compose-with-app.yml build
+docker-compose -f docker-compose-with-app.yml up
 ```
 
 ### Running tests
