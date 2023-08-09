@@ -6,6 +6,7 @@ import (
 	"github.com/samuelg/rentals/config"
 	"github.com/samuelg/rentals/controllers"
 	log "github.com/samuelg/rentals/logging"
+	"github.com/samuelg/rentals/metrics"
 )
 
 // Create router with routes for rentals
@@ -15,6 +16,9 @@ func NewRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 	// TODO: in production trust load balancer in front of API
 	router.SetTrustedProxies(nil)
+
+	// configure prometheus metrics
+	metrics.Init(router)
 
 	rentalGroup := router.Group("rentals")
 	{

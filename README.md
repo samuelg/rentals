@@ -125,3 +125,8 @@ To run tests:
 docker-compose up
 go test -v ./...
 ```
+
+## Prometheus metrics
+
+Prometheus metrics for gin routes can be found [here](http://localhost:8080/metrics).
+
